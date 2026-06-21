@@ -598,6 +598,48 @@
     width: 40px; height: 40px; border-radius: 8px; object-fit: contain; flex-shrink: 0;
   }
   #logo-preview img { max-height: 56px; border-radius: 8px; border: 1px solid var(--gray-light); padding: 4px; background: var(--white); }
+
+  /* SAVE AS MODAL */
+  #saveas-modal .modal { max-height: 70vh; }
+  .saveas-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px; flex-shrink: 0;
+  }
+  .saveas-icon-excel { background: #E8F5E9; color: #1B5E20; }
+  .saveas-icon-pdf   { background: #FEE2E2; color: #991B1B; }
+  .saveas-icon-json  { background: #EEF2FF; color: #3730A3; }
+  .saveas-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  }
+  .saveas-header-text h3 { font-size: 15px; font-weight: 800; color: var(--black); }
+  .saveas-header-text p  { font-size: 11px; color: var(--gray-mid); margin-top: 2px; }
+  .saveas-filename-wrap {
+    display: flex; align-items: center;
+    border: 1.5px solid var(--gray-light);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    transition: border-color 0.15s;
+    background: var(--white);
+  }
+  .saveas-filename-wrap:focus-within { border-color: var(--red); }
+  .saveas-filename-input {
+    flex: 1; border: none; outline: none;
+    padding: 11px 12px; font-size: 14px;
+    font-family: var(--font); color: var(--black); background: transparent;
+  }
+  .saveas-ext {
+    padding: 11px 12px 11px 0;
+    font-size: 13px; font-weight: 600;
+    color: var(--gray-mid); white-space: nowrap;
+    background: transparent;
+  }
+  .saveas-hint {
+    font-size: 11px; color: var(--gray-mid);
+    margin-top: 6px; margin-bottom: 16px;
+  }
+  .saveas-actions { display: flex; gap: 8px; margin-top: 4px; }
+  .saveas-actions .btn { flex: 1; }
 </style>
 </head>
 <body>
@@ -820,6 +862,34 @@
     <button class="btn btn-primary" onclick="saveEditOrder()">Simpan Perubahan</button>
     <div class="mt-8"></div>
     <button class="btn btn-ghost" style="color:#EF4444;border-color:#EF4444" onclick="deleteOrder()">Hapus Order</button>
+  </div>
+</div>
+
+<!-- SAVE AS MODAL -->
+<div class="modal-overlay" id="saveas-modal">
+  <div class="modal">
+    <div class="saveas-header">
+      <div class="saveas-icon" id="saveas-icon"></div>
+      <div class="saveas-header-text">
+        <h3 id="saveas-title">Simpan File</h3>
+        <p id="saveas-desc">Ubah nama file sebelum mengunduh</p>
+      </div>
+    </div>
+    <label class="field" style="margin-bottom:0">
+      <span style="display:block;font-size:12px;font-weight:500;color:var(--gray-dark);margin-bottom:6px;letter-spacing:0.1px">Nama File</span>
+      <div class="saveas-filename-wrap">
+        <input type="text" class="saveas-filename-input" id="saveas-input" placeholder="nama-file">
+        <span class="saveas-ext" id="saveas-ext">.xlsx</span>
+      </div>
+    </label>
+    <div class="saveas-hint" id="saveas-hint"></div>
+    <div class="saveas-actions">
+      <button class="btn btn-ghost" onclick="closeSaveAs()">Batal</button>
+      <button class="btn btn-primary" id="saveas-confirm-btn" onclick="confirmSaveAs()">
+        <svg class="ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Unduh
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1326,6 +1396,19 @@ function deleteOrder() {
 function exportPDF(id) {
   const o = orders.find(x => x.id === id);
   if (!o) return;
+  const defaultName = `Invoice-${o.num.replace(/\//g,'-')}`;
+  openSaveAs({
+    title: 'Export Invoice PDF',
+    desc: `Invoice untuk ${o.client}`,
+    iconClass: 'saveas-icon-pdf',
+    iconSvg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+    defaultName,
+    ext: 'pdf',
+    hint: `No. Order: ${o.num} · ${fmt(orderTotal(o.items))}`,
+    onConfirm: (filename) => { _generatePDF(o, filename); }
+  });
+}
+function _generatePDF(o, filename) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = 210;
@@ -1469,7 +1552,7 @@ function exportPDF(id) {
   doc.setTextColor(255, 255, 255);
   doc.text('Terima kasih atas kepercayaan Anda.', W/2, 292, { align: 'center' });
 
-  doc.save(`Invoice-${o.num.replace(/\//g,'-')}.pdf`);
+  doc.save(filename);
   toast('Invoice PDF diunduh');
 }
 
@@ -1499,40 +1582,86 @@ function shareWA(id) {
   window.open(url, '_blank');
 }
 
+// ========== SAVE AS DIALOG ==========
+let _saveAsCallback = null;
+
+function openSaveAs({ title, desc, iconClass, iconSvg, defaultName, ext, hint, onConfirm }) {
+  document.getElementById('saveas-title').textContent = title;
+  document.getElementById('saveas-desc').textContent = desc;
+  const iconEl = document.getElementById('saveas-icon');
+  iconEl.className = 'saveas-icon ' + iconClass;
+  iconEl.innerHTML = iconSvg;
+  document.getElementById('saveas-input').value = defaultName;
+  document.getElementById('saveas-ext').textContent = '.' + ext;
+  document.getElementById('saveas-hint').textContent = hint || '';
+  _saveAsCallback = onConfirm;
+  document.getElementById('saveas-modal').classList.add('open');
+  setTimeout(() => {
+    const inp = document.getElementById('saveas-input');
+    inp.focus(); inp.select();
+  }, 100);
+}
+function closeSaveAs() {
+  document.getElementById('saveas-modal').classList.remove('open');
+  _saveAsCallback = null;
+}
+function confirmSaveAs() {
+  const raw = document.getElementById('saveas-input').value.trim();
+  const ext = document.getElementById('saveas-ext').textContent.replace('.','');
+  if (!raw) { document.getElementById('saveas-input').focus(); return; }
+  // Bersihkan karakter tidak valid untuk nama file
+  const safe = raw.replace(/[\\/:*?"<>|]/g, '-');
+  closeSaveAs();
+  if (_saveAsCallback) _saveAsCallback(safe + '.' + ext);
+}
+// Tekan Enter untuk konfirmasi
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('saveas-modal').classList.contains('open')) {
+    confirmSaveAs();
+  }
+  if (e.key === 'Escape' && document.getElementById('saveas-modal').classList.contains('open')) {
+    closeSaveAs();
+  }
+});
+
 // ========== EXPORT EXCEL ==========
 function exportExcel() {
   if (orders.length === 0) { toast('Belum ada data order'); return; }
-  const rows = [];
-  orders.forEach(o => {
-    const total = orderTotal(o.items);
-    const paid = orderPaid(o);
-    const due = orderDue(o);
-    const dl = o.deadline ? new Date(o.deadline).toLocaleDateString('id-ID') : '-';
-    const tgl = new Date(o.createdAt).toLocaleDateString('id-ID');
-    o.items.forEach(item => {
-      rows.push({
-        'No. Order': o.num,
-        'Tanggal': tgl,
-        'Klien': o.client,
-        'Deadline': dl,
-        'Status': o.status,
-        'Size': item.size,
-        'Qty (pcs)': item.qty,
-        'Harga/pcs': item.price,
-        'Subtotal': item.qty * item.price,
-        'Total Order': total,
-        'Terbayar': paid,
-        'Sisa Tagihan': due
-      });
-    });
-  });
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [14,12,20,12,14,8,10,14,14,14,14,14].map(w => ({ wch: w }));
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Orders');
   const date = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `Rekap-Order-${date}.xlsx`);
-  toast('Excel diunduh');
+  openSaveAs({
+    title: 'Export Excel',
+    desc: 'Semua order akan diekspor ke spreadsheet',
+    iconClass: 'saveas-icon-excel',
+    iconSvg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>',
+    defaultName: `Rekap-Order-${date}`,
+    ext: 'xlsx',
+    hint: `${orders.length} order akan diekspor`,
+    onConfirm: (filename) => {
+      const rows = [];
+      orders.forEach(o => {
+        const total = orderTotal(o.items);
+        const paid = orderPaid(o);
+        const due = orderDue(o);
+        const dl = o.deadline ? new Date(o.deadline).toLocaleDateString('id-ID') : '-';
+        const tgl = new Date(o.createdAt).toLocaleDateString('id-ID');
+        o.items.forEach(item => {
+          rows.push({
+            'No. Order': o.num, 'Tanggal': tgl, 'Klien': o.client,
+            'Deadline': dl, 'Status': o.status, 'Size': item.size,
+            'Qty (pcs)': item.qty, 'Harga/pcs': item.price,
+            'Subtotal': item.qty * item.price, 'Total Order': total,
+            'Terbayar': paid, 'Sisa Tagihan': due
+          });
+        });
+      });
+      const ws = XLSX.utils.json_to_sheet(rows);
+      ws['!cols'] = [14,12,20,12,14,8,10,14,14,14,14,14].map(w => ({ wch: w }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+      XLSX.writeFile(wb, filename);
+      toast('Excel diunduh');
+    }
+  });
 }
 
 // ========== CLEAR ALL ==========
@@ -1685,21 +1814,31 @@ function renderTopClient(data) {
 
 // ========== FASE 1: BACKUP / RESTORE ==========
 function backupData() {
-  const payload = {
-    app: 'OrderBro', version: 2,
-    exportedAt: new Date().toISOString(),
-    orders, settings
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `OrderBro-Backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  localStorage.setItem('lastBackup', new Date().toISOString());
-  toast('Backup berhasil diunduh');
-  renderBackupBanner();
+  const date = new Date().toISOString().slice(0,10);
+  openSaveAs({
+    title: 'Download Backup',
+    desc: 'Semua data order & pengaturan akan disimpan',
+    iconClass: 'saveas-icon-json',
+    iconSvg: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+    defaultName: `OrderBro-Backup-${date}`,
+    ext: 'json',
+    hint: `${orders.length} order akan di-backup`,
+    onConfirm: (filename) => {
+      const payload = {
+        app: 'OrderBro', version: 2,
+        exportedAt: new Date().toISOString(),
+        orders, settings
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+      localStorage.setItem('lastBackup', new Date().toISOString());
+      toast('Backup berhasil diunduh');
+      renderBackupBanner();
+    }
+  });
 }
 function restoreData(event) {
   const file = event.target.files[0];
