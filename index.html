@@ -1611,8 +1611,10 @@ function confirmSaveAs() {
   if (!raw) { document.getElementById('saveas-input').focus(); return; }
   // Bersihkan karakter tidak valid untuk nama file
   const safe = raw.replace(/[\\/:*?"<>|]/g, '-');
+  // Capture callback dulu sebelum closeSaveAs() menghapusnya
+  const cb = _saveAsCallback;
   closeSaveAs();
-  if (_saveAsCallback) _saveAsCallback(safe + '.' + ext);
+  if (cb) cb(safe + '.' + ext);
 }
 // Tekan Enter untuk konfirmasi
 document.addEventListener('keydown', e => {
