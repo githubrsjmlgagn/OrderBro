@@ -4,7 +4,7 @@
    - CDN (jsPDF, XLSX) → stale-while-revalidate
    - Navigasi → cache-first dengan fallback ke index.html (offline-capable)
 */
-const CACHE = 'orderbro-v1.0.4';
+const CACHE = 'orderbro-v1.0.5';
 
 // File inti yang di-cache saat install (path relatif terhadap scope)
 const SHELL = [
