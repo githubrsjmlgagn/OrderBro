@@ -161,13 +161,17 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 6px;
+    min-width: 0;
   }
   .size-item-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
+    min-width: 0;
   }
   .size-item input {
+    width: 100%;
+    min-width: 0;
     padding: 8px;
     font-size: 13px;
     border: 1.5px solid var(--gray-light);
