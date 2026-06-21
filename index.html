@@ -161,17 +161,13 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 6px;
-    min-width: 0;
   }
   .size-item-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 6px;
-    min-width: 0;
   }
   .size-item input {
-    width: 100%;
-    min-width: 0;
     padding: 8px;
     font-size: 13px;
     border: 1.5px solid var(--gray-light);
@@ -1332,7 +1328,7 @@ function exportPDF(id) {
   let y = 20;
 
   // Header
-  doc.setFillColor(200, 16, 46);
+  doc.setFillColor(255, 84, 84);
   doc.rect(0, 0, W, 30, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(20);
@@ -1431,8 +1427,21 @@ function exportPDF(id) {
     doc.setFontSize(10);
     doc.setTextColor(30, 30, 30);
     doc.text(settings.rekening, 15, y);
-    y += 14;
+    y += 7;
   }
+  if (settings.phone) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text('HP / WA', 15, y);
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(30, 30, 30);
+    doc.text(settings.phone, 15, y);
+    y += 7;
+  }
+  y += 7;
 
   // TTD
   doc.setFont('helvetica', 'normal');
@@ -1449,7 +1458,7 @@ function exportPDF(id) {
   doc.text(settings.bizName || 'OrderBro', 140, y);
 
   // Footer
-  doc.setFillColor(200, 16, 46);
+  doc.setFillColor(255, 84, 84);
   doc.rect(0, 285, W, 12, 'F');
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
